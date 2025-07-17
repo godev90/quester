@@ -89,6 +89,26 @@ func (r *Request) SetContext(ctx context.Context) *Request {
 	return r
 }
 
+// SetTimeout sets a timeout for the request context.
+func (r *Request) SetTimeout(d time.Duration) *Request {
+	if r.ctx != nil {
+		var cancel context.CancelFunc
+		r.ctx, cancel = context.WithTimeout(r.ctx, d)
+		go func() {
+			<-r.ctx.Done()
+			cancel()
+		}()
+	} else {
+		var cancel context.CancelFunc
+		r.ctx, cancel = context.WithTimeout(context.Background(), d)
+		go func() {
+			<-r.ctx.Done()
+			cancel()
+		}()
+	}
+	return r
+}
+
 // Do sends the request and decodes the response into result.
 func (r *Request) Do(result any) (*Response, error) {
 	fullURL := r.client.BaseURL + r.path
